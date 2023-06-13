@@ -1,0 +1,240 @@
+<html>
+  <head>
+    <title>MetaMask Connection Page</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css')}}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <header>
+      <img src="static/logo.png" alt="Logo">
+      <button class="header-button">🇦🇷 Argentina</button>
+    </header>
+      <h1>Connect Your MetaMask Wallet Here!</h1>
+
+    <div class="button-container">
+      <button id='connectWallet' class="round-button" onclick="">Connect Wallet</button>
+      <button id='getBalance' class="round-button" onclick="checkBalance()">Get Balance of Wallet</button>
+    </div>
+
+    <div class="button-container">
+      <button id="generateStatement" class="round-button" onclick="generateStatement()">Generate your proof of reserve here</button>
+      <button id="uploadID" class="round-button" onclick="uploadID()">Upload ID</button>
+    </div>
+
+    <div class="button-container">
+      <button id="emailStatement" class="round-button">Email the statement to myself</button>
+      <button id="signMessage" onclick="signMessage()" class="round-button">Sign Message</button>
+    </div>
+
+      <button id="generateTaxReturn" class="round-button" onclick="generateTaxReturn()">Upload ID</button>
+
+      <p id="walletAddress" class="centered-text"></p>
+      <p id="walletBalance" class="centered-text"></p>
+      <p id="ethereumLogged" class="centered-text"></p>
+    <h1>Why this is so stupid</h1>
+<!--      <embed src="/downloads/" type="application/pdf" width="100%" height="600px"/>-->
+
+    <script type="text/javascript">
+      window.userWalletAddress = null
+      const connectWallet = document.getElementById('connectWallet')
+      const walletAddress = document.getElementById('walletAddress')
+      const walletBalance = document.getElementById('walletBalance')
+      const ethereumLogged = document.getElementById("ethereumLogged")
+
+      function checkInstalled() {
+        if (typeof window.ethereum == 'undefined') {
+          connectWallet.innerText = 'MetaMask isnt installed, please install it'
+          connectWallet.classList.remove()
+          connectWallet.classList.add()
+          return false
+        }
+
+        connectWallet.addEventListener('click', connectWalletwithMetaMask)
+      }
+
+      async function generateStatement() {
+        window.location.href = "/account_summary/"
+      }
+
+      async function generateTaxReturn() {
+        window.location.href = "/tax_return/"
+      }
+      async function uploadID() {
+      }
+
+      async function signMessage() {
+        const msgParams = JSON.stringify({
+          domain: {
+            // This defines the network, in this case, Mainnet.
+            chainId: 1,
+            // Give a user-friendly name to the specific contract you're signing for.
+            name: 'Ether Mail',
+            // Add a verifying contract to make sure you're establishing contracts with the proper entity.
+            verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+            // This identifies the latest version.
+            version: '1',
+          },
+
+          // This defines the message you're proposing the user to sign, is dapp-specific, and contains
+          // anything you want. There are no required fields. Be as explicit as possible when building out
+          // the message schema.
+          message: {
+            contents: 'Hello, Bob!',
+            attachedMoneyInEth: 4.2,
+          },
+          // This refers to the keys of the following types object.
+          primaryType: 'Mail',
+          types: {
+            // This refers to the domain the contract is hosted on.
+            EIP712Domain: [
+              { name: 'name', type: 'string' },
+              { name: 'version', type: 'string' },
+              { name: 'chainId', type: 'uint256' },
+              { name: 'verifyingContract', type: 'address' },
+            ],
+            // Not an EIP712Domain definition.
+            Group: [
+              { name: 'name', type: 'string' },
+              { name: 'members', type: 'Person[]' },
+            ],
+            // Refer to primaryType.
+            Mail: [
+              { name: 'from', type: 'Person' },
+              { name: 'to', type: 'Person[]' },
+              { name: 'contents', type: 'string' },
+            ],
+            // Not an EIP712Domain definition.
+            Person: [
+              { name: 'name', type: 'string' },
+              { name: 'wallets', type: 'address[]' },
+            ],
+          },
+        });
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+          .catch((e) => {
+          console.error(e.message)
+          return
+          })
+
+        var from = accounts;
+
+        console.log("75202857030303", JSON.stringify(from))
+        var params = [from[0], msgParams]
+        var method = 'eth_signTypedData_v4';
+
+        web3.currentProvider.sendAsync(
+          {
+            method,
+            params,
+            from: from[0],
+          },
+          function (err, result) {
+            if (err) return console.dir(err);
+            if (result.error) {
+              alert(result.error.message);
+            }
+            if (result.error) return console.error('ERROR', result);
+            console.log('TYPED SIGNED:' + JSON.stringify(result.result));
+
+            const recovered = sigUtil.recoverTypedSignature_v4({
+              data: JSON.parse(msgParams),
+              sig: result.result,
+            });
+
+            if (
+              ethUtil.toChecksumAddress(recovered) === ethUtil.toChecksumAddress(from)
+            ) {
+              ethereumLogged.innerText = "Session successfully logged to Ethereum."
+              alert('Successfully recovered signer as ' + from);
+            } else {
+              alert(
+                'Failed to verify signer when comparing ' + result + ' to ' + from
+              );
+            }
+          }
+        );
+      }
+
+      async function connectWalletwithMetaMask() {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+        .catch((e) => {
+        console.error(e.message)
+        return
+        })
+
+        if (!accounts) { return }
+
+        // console.log("what")
+        // let provider = window.ethereum;
+        // // edge case if MM and CBW are both installed
+        // if (window.ethereum.providers?.length) {
+        //   window.ethereum.providers.forEach(async (p) => {
+        //     if (!p.isMetaMask) provider = p;
+        //   });
+        // }
+        // console.log(JSON.stringify(provider))
+
+        window.userWalletAddress = accounts[0]
+        walletAddress.innerText = window.userWalletAddress
+
+        connectWallet.innerText = 'Sign Out'
+        connectWallet.removeEventListener('click', connectWalletwithMetaMask)
+        setTimeout(() => {
+          connectWallet.addEventListener('click', signOutOfMetaMask)
+        }, 200)
+
+      }
+
+
+      function signOutOfMetaMask() {
+        window.userwalletAddress = null
+        walletAddress.innerText = ''
+        connectWallet.innerText = 'Connect Wallet'
+
+
+        connectWallet.removeEventListener('click', signOutOfMetaMask)
+        setTimeout(() => {
+          connectWallet.addEventListener('click', connectWalletwithMetaMask)
+        }, 200  )
+      }
+
+      async function checkBalance() {
+        let balance = await window.ethereum.request({ method: "eth_getBalance",
+        params: [
+          window.userWalletAddress,
+          'latest'
+        ]
+      }).catch((err)=> {
+          console.log(err)
+      })
+
+      console.log(parseFloat((balance) / Math.pow(10,18)))
+
+      walletBalance.innerText = parseFloat((balance) / Math.pow(10,18))
+
+      const balance_float = parseFloat((balance) / Math.pow(10,18))
+      $.ajax({
+        url: '/process-data',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({"balance": balance_float}),
+                success: function(response) {
+                    console.log('Response:', response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                }
+
+      })
+    }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        checkInstalled()
+      })
+
+
+    </script>
+
+    </center>
+  </body>
+</html>
