@@ -1,2 +1,3 @@
 # capychain
-Capychain for Franklin Templeton Blockchain Competition
+Capychain for Franklin Templeton Blockchain Competition.
+www.capychain.com
