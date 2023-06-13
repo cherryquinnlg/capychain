@@ -1,20 +1,17 @@
+import os
+
 import numpy as np
 import pandas as pd
 from pycoingecko import CoinGeckoAPI
 from datetime import datetime
+from datetime import datetime as dt
+import scipy
 
 CG = CoinGeckoAPI()
-
+TODAY_DATE = dt.now().date()
 CHAINS = dict(eth="ethereum",
               poly="polygon",
               arbi="arbitrum")
-
-TODAY_DATE = datetime.date(2023, 5, 31)
-TODAY_DATE.strftime("%s")
-
-today_date = datetime.date(2023, 5, 31)
-may_date = datetime.date(2020, 5, 31)
-apr_date = datetime.date(2020, 4, 30)
 
 #################################################################################
 def get_price(date, chain="eth", currency="usd"):
@@ -30,6 +27,34 @@ def get_price_series(chain="eth", currency="usd", from_date=TODAY_DATE, to_date=
     return {"dates": dates, "prices": prices}
 
 price_series = get_price_series()
-def get_portfolio_sharpe_ratio():
+RISK_FREE_RATE = os.getenv("risk_free_rate")
+INDIVIDUAL_SHARPE_RATIOS = os.getenv("crypto_sharpe_ratios")
+def get_portfolio_sharpe_ratio(weights):
+    # Calculate portfolio return and standard deviation
+    portfolio_return = np.dot(weights, INDIVIDUAL_SHARPE_RATIOS)
+    portfolio_std_dev = np.sqrt(np.dot(weights ** 2, INDIVIDUAL_SHARPE_RATIOS ** 2))
 
-def get_portfolio_value_at_risk():
+    # Calculate excess return (portfolio return - risk-free rate)
+    excess_return = portfolio_return - RISK_FREE_RATE
+
+    # Calculate Sharpe ratio
+    sharpe_ratio = excess_return / portfolio_std_dev
+
+    return sharpe_ratio
+
+def get_maximum_drawdown(returns):
+    cumulative_returns = np.cumprod(1 + returns)  # Calculate cumulative returns
+    peak = np.maximum.accumulate(cumulative_returns)  # Find the peak value
+    drawdown = (cumulative_returns - peak) / peak  # Calculate drawdown
+    max_drawdown = np.max(drawdown)  # Find the maximum drawdown
+
+    return max_drawdown
+
+def calculate_yearly_var(returns, level=0.95):
+    mean_return = np.mean(returns)  # Calculate the mean return
+    std_dev = np.std(returns)  # Calculate the standard deviation
+    z_score = scipy.stats.norm.ppf(1-level)  # Calculate the z-score for the 95% confidence level
+    yearly_std_dev = std_dev * np.sqrt(252)  # Convert the standard deviation to a yearly basis
+    yearly_var = mean_return - (z_score * yearly_std_dev)  # Calculate the yearly VaR
+
+    return yearly_var

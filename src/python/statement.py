@@ -7,27 +7,23 @@ import numpy as np
 import pandas as pd
 import plotly
 from pycoingecko import CoinGeckoAPI
+import dotenv
+import os
 
 CG = CoinGeckoAPI()
-# address = "0x5C198D5C727C6D51Da451B44f9e759a79f84f743"
-address = "0x6bd97627d084a7d4c476715031e00d99d9275d80"
 ETHER_VALUE = 1e18
-
 BASE_URLs = {
     "eth":  "https://api.etherscan.io/api",
     "poly": "https://api.polygonscan.com/api",
     "arbi": "https://api.arbiscan.io/api"
 }
-
-API_KEYs = dict(eth = "5IUWD6RCNKV4HUARAXMUTNPS1GN77R1JTG",
-                poly = "WABPAD8UT56CBQX2MB27E6EVGR265B7AYE",
-                arbi = "2SCR4A7R8YWTR5DKSRZEK65XGNSBK6X2XB")
-
-TODAY_DATE = datetime.date(2023, 5, 31)
-
 CHAINS = dict(eth="ethereum",
               poly="matic-network",
               arbi="arbitrum")
+API_KEYs = os.getenv("API_KEYs")
+TODAY_DATE = dt.now().date()
+
+
 
 def make_api_url(module, action, address, chain="eth", **kwargs):
     base_url = BASE_URLs[chain]
@@ -44,11 +40,6 @@ def get_account_balance(address, chain="eth"):
 
     return int(data["result"]) / ETHER_VALUE
 
-address = "0xDf8DD5e0b4168f20a3488Ad088dDB198fE602Cb3"
-get_account_balance(address, "arbi")
-get_account_balance(address, "eth")
-get_account_balance(address, "poly")
-
 def get_price(date, chain="eth", currency="usd"):
     res = CG.get_coin_history_by_id(id=CHAINS[chain], date=date.strftime("%d-%m-%Y"))
     return res["market_data"]["current_price"][currency]
@@ -56,7 +47,6 @@ def get_price(date, chain="eth", currency="usd"):
 def crypto_to_fiat(amt, crypto_chain="eth", fiat_type="usd", date=TODAY_DATE):
     rate = get_price(date, crypto_chain, fiat_type)
     return amt * rate
-
 
 def get_transactions(address, chain="eth"):
     get_transactions_url = make_api_url("account", "txlist", address, chain=chain, startblock=0, endblock=999999999,
@@ -131,26 +121,12 @@ def get_balance_by_date(date, res):
 
     return balances[i]
 
-##############################################################
-today_date = datetime.date(2023, 5, 31)
-may_date = datetime.date(2020, 5, 31)
-apr_date = datetime.date(2020, 4, 30)
-
-
-get_balance_by_date(today_date, res)
-get_balance_by_date(apr_date, res)
-get_balance_by_date(may_date, res)
-
-########################################################
-address = "0x39ad4B822b804FaCEcEAa750720A9655673766A6"
-res = get_transactions(address)
-
 calendar = {"January": datetime.date(2023, 1, 31),
        "Feburary": datetime.date(2023, 2, 28),
         "March": datetime.date(2023, 3, 31),
         "April": datetime.date(2023, 4, 30),
         "May": datetime.date(2023, 5, 31),
-        "June": datetime.date(2022, 6, 30),
+        "June": datetime.date(2023, 6, 30),
        "July": datetime.date(2022, 7, 31),
        "August": datetime.date(2022, 8, 31),
        "September": datetime.date(2022, 9, 30),
@@ -192,49 +168,11 @@ for chain,v in CHAINS.items():
     curr_account[chain] = crypto_to_fiat(get_account_balance(address, chain), chain)
     print(curr_account[chain])
 
-fig = px.pie(values=curr_account.values(), names=curr_account.keys(), cma)
-fig.show()
-fig.write_image("/Users/guoziting/Desktop/capychain/pi_test.png",
-                scale=6,
-                height=500)
 
 # get bar plot
 
-headerColor = 'lightgray'
-rowOddColor = 'white'
-rowEvenColor = 'lightgray'
-
-header = dict(
-    values=["<b>Wallet Address</b>\n", "<b>Balance (ETH)</b>\n", '<b>Balance (USD equivalent)</b>'],
-    fill_color=headerColor,
-    align=['left', 'center'],
-    font=dict(color='black', size=16, family = "Helvetica Neue"),
-    height=60
-)
-
-cells = dict(
-    values=[df_eth_account["Wallet Address"], df_eth_account["Balance (ETH)"], df_eth_account["Balance (USD equivalent)"]],
-    # 2-D list of colors for alternating rows
-    fill_color = [[rowOddColor,rowEvenColor,rowOddColor, rowEvenColor,rowOddColor]*5],
-    align = ['left', 'center'],
-    font = dict(color = 'black', size = 16, family = "Helvetica Neue"),
-    height=40
-    )
-
-fig = go.Figure(data=[go.Table(
-    columnwidth=[400, 100, 100],
-  header=header,
-  cells=cells)
-])
 
 
-fig.update_layout(
-    width=600,
-    height=500)
-
-fig.write_image("/Users/guoziting/Desktop/capychain/test.png",
-                scale=6,
-                height=500)
 
 # header = dict(
 #     values=["Date", "Description, ""Balance"],

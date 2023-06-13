@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
-contract HashTable {
+contract Storage {
     struct Data {
         address user;
         string time;
@@ -14,6 +14,14 @@ contract HashTable {
     function addData(address _user, string memory _time, string memory _idHash, string memory _reportHash) public {
         Data memory newData = Data(_user, _time, _idHash, _reportHash);
         dataList.push(newData);
+    }
+
+    function addDataBatch(address[] memory _users, string[] memory _times, string[] memory _idHashs, string[] memory _reportHashs) public onlyOwner {
+        for (uint256 i = 0; i < _users.length; i++) {
+            Data memory newData = Data(_users[i], _times[i], _idHashs[i], _reportHashs[i]);
+            dataList.push(newData);
+        }
+
     }
 
     function getCountByUser(address _address) public view returns (uint256) {
@@ -70,4 +78,4 @@ function getIPFSByUserTime(address user, string calldata time) public view retur
         }
         return result;
     }
-    }
+    }    

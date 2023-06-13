@@ -9,6 +9,48 @@ from fpdf import FPDF
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
+headerColor = 'lightgray'
+rowOddColor = 'white'
+rowEvenColor = 'lightgray'
+
+header = dict(
+    values=["<b>Wallet Address</b>\n", "<b>Balance (ETH)</b>\n", '<b>Balance (USD equivalent)</b>'],
+    fill_color=headerColor,
+    align=['left', 'center'],
+    font=dict(color='black', size=16, family = "Helvetica Neue"),
+    height=60
+)
+
+cells = dict(
+    values=[df_eth_account["Wallet Address"], df_eth_account["Balance (ETH)"], df_eth_account["Balance (USD equivalent)"]],
+    # 2-D list of colors for alternating rows
+    fill_color = [[rowOddColor,rowEvenColor,rowOddColor, rowEvenColor,rowOddColor]*5],
+    align = ['left', 'center'],
+    font = dict(color = 'black', size = 16, family = "Helvetica Neue"),
+    height=40
+    )
+
+fig = go.Figure(data=[go.Table(
+    columnwidth=[400, 100, 100],
+  header=header,
+  cells=cells)
+])
+
+fig.update_layout(
+    width=600,
+    height=500)
+
+fig.write_image("/Users/guoziting/Desktop/capychain/test.png",
+                scale=6,
+                height=500)
+
+fig = px.pie(values=curr_account.values(), names=curr_account.keys(), cma)
+fig.show()
+fig.write_image("/Users/guoziting/Desktop/capychain/pi_test.png",
+                scale=6,
+                height=500)
+
+
 class PDF(FPDF):
     def __init__(self):
         super().__init__()
